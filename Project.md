@@ -4,7 +4,7 @@
 
 This file has all the steps how I accomplished this project and all the tests I did.
 
-# Start 7.5.2022:
+## Start 7.5.2022:
 
 I will start this project by creating those three repositories I talked about before but I actually has to create just two because one of them already exist. 
 
@@ -96,3 +96,6 @@ After looking info in the internet I found out that you have to use && git clone
 	 apachemoduuli   Documents   hello       important   Linux-HomeWork   MyGitRepos   Pictures   Public      teemu          teemuntyö   'UFW Salt tila.png'
 
 This way it seems to be working but I also found out about the program called repo that's suppose to help with multiple git repositories. I tried to install this "repo" program but I couldn't get it to work. 
+
+## 12.5.2022:
+
