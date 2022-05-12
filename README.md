@@ -7,5 +7,5 @@ This project is currently in ALPHA state.
 
 # Project 
 
-Follow the project flow in this document.
+Follow the project flow in this [document](github.com/Teemu21/MyGitRepos/blob/main/Project.md).
 	
