@@ -8,7 +8,7 @@ H7: My miniproject will be about Salt state that will install Git, SSH and Micro
 
 This project is currently in ALPHA state. You can test ALPHA with this command:
 
-	git clone git@github.com/Teemu21/Animesongs && git clone git@github.com/Teemu21/MyGunpla && git clone git@github.com/Teemu21/Soturikissat 
+	git clone git@github.com:Teemu21/Animesongs.git && git clone git@github.com:Teemu21/MyGunpla.git && git clone git@github.com:Teemu21/Soturikissat.git 
  
 # Project 
 
