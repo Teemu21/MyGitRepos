@@ -10,9 +10,7 @@ This project will only work on Windows if you have Linux on Windows. You can ins
 
 # State:
 
-This project is currently in ALPHA state. You can test ALPHA with this command:
-
-	git clone git@github.com:Teemu21/Animesongs.git && git clone git@github.com:Teemu21/MyGunpla.git && git clone git@github.com:Teemu21/Soturikissat.git 
+This project is currently in BETA state which means that Linux part of this proejct works.
  
 # Project 
 
