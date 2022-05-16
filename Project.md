@@ -648,7 +648,7 @@ After checking on my Windows machine I found files named repos and ssh in my C:/
 
 Now my project is complete but I must still do one final test with both Linux and Windows machines online. So, let's finish this!
 
-Before the final test I removed ssh and repos directories on Windows. On the Raspberrypi I purged git and ssh. After this deleted the repos, ssh and micro directories from /usr/local/bin.
+Before the final test I removed ssh and repos files on Windows. On the Raspberrypi I purged git and ssh. After this deleted the repos, ssh and micro files from /usr/local/bin.
 
 	$ sudo salt "*" state.apply repos
 	windows:
