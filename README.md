@@ -6,7 +6,7 @@ H7: My miniproject will be about Salt state that will install Git, SSH and Micro
 
 ## ALL Linux Homework
 
-[H7](https://github.com/Teemu21/Linux-HomeWork/blob/main/H3.md)
+[H7](https://github.com/Teemu21/Linux-HomeWork/blob/main/H7.md)
 
 ## UPDATE:
 
