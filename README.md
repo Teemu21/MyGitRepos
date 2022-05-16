@@ -25,7 +25,7 @@ Follow the project flow in this [document](https://github.com/Teemu21/MyGitRepos
 1. Download files from release called "Complete" on your Salt master.
 2. Make new directory under your own /srv/salt/ directory and copy the files to that directory.
 3. Run Salt state with this command: "sudo salt "*" state.apply yourdir" and you should see similar result like below as a result.
-
+4. Run commands named: sshkey and repos.
 Additional instructions:
 
 * If you have Windows machine and you have followed FOSS's instructions to install Linux on Windows know that when you run bash sshkey on Windows it will create SSH keys on your WSL machine but not on your actual Windows machine. After running sshkey on Windows you will have to manually run command "ssh-keygen" on your actual Windows machine so that you can use pull/push in Git.
