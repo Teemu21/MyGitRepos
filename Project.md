@@ -412,3 +412,997 @@ This didn't work either but this one finally worked and now I have idempotence.
 	Total run time:   2.056 s
 	
 Now that Micro works I think that let's call it a day and continue tomorrow. Now the Linux part of this project is done. Tomorrow I will make this to work on the Windows too.
+
+## 16.5.2022:
+
+Let's start testing this on Windows by first modifying the init.sls file.
+
+New init.sls:
+
+![newinit](newinit.png)
+
+For this configuration I used Tero Karvinen's [Configure Windows and Linux with Single Salt Module](https://terokarvinen.com/2018/configure-windows-and-linux-with-salt-jinja-if-else-and-grains/?fromSearch=windows%20linux%20salt) and [Control Windows with Salt](https://terokarvinen.com/2018/control-windows-with-salt/) articles as reference. Let's test this.
+
+After tweaking the init.sls file litle I finally got it working with some expected and unexpected errors because I'm running it now only on Windows slave.
+
+	$ sudo salt "windows" state.apply repos
+	windows:
+	----------
+	          ID: programs
+	    Function: pkg.installed
+	      Result: False
+	     Comment: The following packages failed to install/update: ssh, git
+	     Started: 09:33:42.234448
+	    Duration: 298.151 ms
+	     Changes:   
+	              ----------
+	              git:
+	                  Unable to locate package git
+	              ssh:
+	                  Unable to locate package ssh
+	----------
+	          ID: choco
+	    Function: chocolatey.installed
+	        Name: micro
+	      Result: True
+	     Comment: micro 2.0.10 is already installed
+	     Started: 09:33:42.532599
+	    Duration: 9103.427 ms
+	     Changes:   
+	----------
+	          ID: installmicro
+	    Function: cmd.run
+	        Name: curl https://getmic.ro | bash
+	      Result: False
+	     Comment: Command "curl https://getmic.ro | bash" run
+	     Started: 09:33:51.636026
+	    Duration: 4250.854 ms
+	     Changes:   
+	              ----------
+	              pid:
+	                  27140
+	              retcode:
+	                  1
+	              stderr:
+	                    % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+	                                                   Dload  Upload   Total   Spent    Left  Speed
+	                  
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0Access is denied.
+	                  
+	                  
+	                  
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+	                  100  9898  100  9898    0     0  12375      0 --:--:-- --:--:-- --:--:-- 12387
+	                  curl: (23) Failure writing output to destination
+	              stdout:
+	----------
+	          ID: installmicro
+	    Function: cmd.run
+	        Name: sudo mv micro /usr/local/bin
+	      Result: False
+	     Comment: Command "sudo mv micro /usr/local/bin" run
+	     Started: 09:33:55.886880
+	    Duration: 15.657 ms
+	     Changes:   
+	              ----------
+	              pid:
+	                  4960
+	              retcode:
+	                  1
+	              stderr:
+	                  'sudo' is not recognized as an internal or external command,
+	                  operable program or batch file.
+	              stdout:
+	----------
+	          ID: C:/repos
+	    Function: file.managed
+	      Result: False
+	     Comment: The 'mode' option is not supported on Windows
+	     Started: 09:33:55.902537
+	    Duration: 0.0 ms
+	     Changes:   
+	----------
+	          ID: C:/ssh
+	    Function: file.managed
+	      Result: False
+	     Comment: The 'mode' option is not supported on Windows
+	     Started: 09:33:55.902537
+	    Duration: 0.0 ms
+	     Changes:   
+	
+	Summary for windows
+	------------
+	Succeeded: 1 (changed=3)
+	Failed:    5
+	------------
+	Total states run:     6
+	Total run time:  13.668 s
+	ERROR: Minions returned with non-zero exit code
+
+For some strange reason Windows couldn't find git from Windows repository but that can be fixed with choco. I could also make second file.managed state that changes the mode to 755 which apparently doesn't work on Windows.
+
+Let's modify the init.sls.
+
+![init4](init4.png)
+
+I modified the choco install litle bit so now it's:
+
+	names:
+	 - git
+	 - micro 
+
+Unlike in the in the picture above and this was the test result:
+
+	$ sudo salt "windows" state.apply repos
+	 windows:
+	 ----------
+	           ID: programs
+	     Function: pkg.installed
+	       Result: False
+	      Comment: The following packages failed to install/update: ssh, git
+	      Started: 10:02:05.149046
+	     Duration: 2840.914 ms
+	      Changes:   
+	               ----------
+	               git:
+	                   Unable to locate package git
+	               ssh:
+	                   Unable to locate package ssh
+	 ----------
+	           ID: choco
+	     Function: chocolatey.installed
+	         Name: git
+	       Result: True
+	      Comment: git 2.36.0 is already installed
+	      Started: 10:02:07.989960
+	     Duration: 6183.406 ms
+	      Changes:   
+	 ----------
+	           ID: choco
+	     Function: chocolatey.installed
+	         Name: micro
+	       Result: True
+	      Comment: micro 2.0.10 is already installed
+	      Started: 10:02:14.173366
+	     Duration: 3738.598 ms
+	      Changes:   
+	 ----------
+	           ID: installmicro
+	     Function: cmd.run
+	         Name: curl https://getmic.ro | bash
+	       Result: False
+	      Comment: Command "curl https://getmic.ro | bash" run
+	      Started: 10:02:17.911964
+	     Duration: 3453.073 ms
+	      Changes:   
+	               ----------
+	               pid:
+	                   24316
+	               retcode:
+	                   1
+	               stderr:
+	                     % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+	                                                    Dload  Upload   Total   Spent    Left  Speed
+	                   
+	                     0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0Access is denied.
+	                   
+	                   
+	                   
+	                     0  9898    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+	                   100  9898  100  9898    0     0  24948      0 --:--:-- --:--:-- --:--:-- 24994
+	                   curl: (23) Failure writing output to destination
+	               stdout:
+	 ----------
+	           ID: installmicro
+	     Function: cmd.run
+	         Name: sudo mv micro /usr/local/bin
+	       Result: False
+	      Comment: Command "sudo mv micro /usr/local/bin" run
+	      Started: 10:02:21.365037
+	     Duration: 15.62 ms
+	      Changes:   
+	               ----------
+	               pid:
+	                   26552
+	               retcode:
+	                   1
+	               stderr:
+	                   'sudo' is not recognized as an internal or external command,
+	                   operable program or batch file.
+	               stdout:
+	 ----------
+	           ID: C:/repos
+	     Function: file.managed
+	       Result: True
+	      Comment: File C:/repos is in the correct state
+	      Started: 10:02:21.380657
+	     Duration: 112.88 ms
+	      Changes:   
+	 ----------
+	           ID: C:/ssh
+	     Function: file.managed
+	       Result: True
+	      Comment: File C:/ssh is in the correct state
+	      Started: 10:02:21.493537
+	     Duration: 13.166 ms
+	      Changes:   
+	 ----------
+	           ID: /usr/local/bin/repos && /usr/local/bin/ssh
+	     Function: file.managed
+	       Result: False
+	      Comment: The 'mode' option is not supported on Windows
+	      Started: 10:02:21.506703
+	     Duration: 0.0 ms
+	      Changes:   
+	 
+	 Summary for windows
+	 ------------
+	 Succeeded: 4 (changed=3)
+	 Failed:    4
+	 ------------
+	 Total states run:     8
+	 Total run time:  16.358 s
+	 ERROR: Minions returned with non-zero exit code
+
+After checking on my Windows machine I found files named repos and ssh in my C:/ directory. Then I runned the bash repos and it cloned my repos in the C directory.
+
+Now my project is complete but I must still do one final test with both Linux and Windows machines online. So, let's finish this!
+
+Before the final test I removed ssh and repos directories on Windows. On the Raspberrypi I purged git and ssh. After this deleted the repos, ssh and micro directories from /usr/local/bin.
+
+	$ sudo salt "*" state.apply repos
+	windows:
+	----------
+	          ID: programs
+	    Function: pkg.installed
+	      Result: False
+	     Comment: The following packages failed to install/update: ssh, git
+	     Started: 10:25:01.433471
+	    Duration: 329.404 ms
+	     Changes:   
+	              ----------
+	              git:
+	                  Unable to locate package git
+	              ssh:
+	                  Unable to locate package ssh
+	----------
+	          ID: choco
+	    Function: chocolatey.installed
+	        Name: git
+	      Result: True
+	     Comment: git 2.36.0 is already installed
+	     Started: 10:25:01.762875
+	    Duration: 3843.348 ms
+	     Changes:   
+	----------
+	          ID: choco
+	    Function: chocolatey.installed
+	        Name: micro
+	      Result: True
+	     Comment: micro 2.0.10 is already installed
+	     Started: 10:25:05.606223
+	    Duration: 3767.092 ms
+	     Changes:   
+	----------
+	          ID: installmicro
+	    Function: cmd.run
+	        Name: curl https://getmic.ro | bash
+	      Result: False
+	     Comment: Command "curl https://getmic.ro | bash" run
+	     Started: 10:25:09.388795
+	    Duration: 3955.112 ms
+	     Changes:   
+	              ----------
+	              pid:
+	                  29028
+	              retcode:
+	                  1
+	              stderr:
+	                    % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+	                                                   Dload  Upload   Total   Spent    Left  Speed
+	                  
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0Access is denied.
+	                  
+	                  
+	                  
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+	                  100  9898  100  9898    0     0  22430      0 --:--:-- --:--:-- --:--:-- 22806
+	                  curl: (23) Failure writing output to destination
+	              stdout:
+	----------
+	          ID: installmicro
+	    Function: cmd.run
+	        Name: sudo mv micro /usr/local/bin
+	      Result: False
+	     Comment: Command "sudo mv micro /usr/local/bin" run
+	     Started: 10:25:13.343907
+	    Duration: 31.265 ms
+	     Changes:   
+	              ----------
+	              pid:
+	                  19556
+	              retcode:
+	                  1
+	              stderr:
+	                  'sudo' is not recognized as an internal or external command,
+	                  operable program or batch file.
+	              stdout:
+	----------
+	          ID: C:/repos
+	    Function: file.managed
+	      Result: True
+	     Comment: File C:/repos updated
+	     Started: 10:25:13.375172
+	    Duration: 94.151 ms
+	     Changes:   
+	              ----------
+	              diff:
+	                  New file
+	----------
+	          ID: C:/ssh
+	    Function: file.managed
+	      Result: True
+	     Comment: File C:/ssh updated
+	     Started: 10:25:13.469323
+	    Duration: 46.879 ms
+	     Changes:   
+	              ----------
+	              diff:
+	                  New file
+	----------
+	          ID: /usr/local/bin/repos && /usr/local/bin/ssh
+	    Function: file.managed
+	      Result: False
+	     Comment: The 'mode' option is not supported on Windows
+	     Started: 10:25:13.516202
+	    Duration: 0.0 ms
+	     Changes:   
+	
+	Summary for windows
+	------------
+	Succeeded: 4 (changed=5)
+	Failed:    4
+	------------
+	Total states run:     8
+	Total run time:  12.067 s
+	raspberrypi:
+	----------
+	          ID: programs
+	    Function: pkg.installed
+	      Result: True
+	     Comment: The following packages were installed/updated: ssh, git
+	     Started: 10:25:08.723321
+	    Duration: 16797.901 ms
+	     Changes:   
+	              ----------
+	              git:
+	                  ----------
+	                  new:
+	                      1:2.20.1-2+deb10u3
+	                  old:
+	              ssh:
+	                  ----------
+	                  new:
+	                      1:7.9p1-10+deb10u2+rpt1
+	                  old:
+	----------
+	          ID: choco
+	    Function: chocolatey.installed
+	        Name: git
+	      Result: False
+	     Comment: State 'chocolatey.installed' was not found in SLS 'repos'
+	              Reason: 'chocolatey' __virtual__ returned False: chocolatey module could not be loaded
+	     Changes:   
+	----------
+	          ID: choco
+	    Function: chocolatey.installed
+	        Name: micro
+	      Result: False
+	     Comment: State 'chocolatey.installed' was not found in SLS 'repos'
+	              Reason: 'chocolatey' __virtual__ returned False: chocolatey module could not be loaded
+	     Changes:   
+	----------
+	          ID: installmicro
+	    Function: cmd.run
+	        Name: curl https://getmic.ro | bash
+	      Result: True
+	     Comment: Command "curl https://getmic.ro | bash" run
+	     Started: 10:25:32.511809
+	    Duration: 4912.91 ms
+	     Changes:   
+	              ----------
+	              pid:
+	                  1994
+	              retcode:
+	                  0
+	              stderr:
+	                    % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+	                                                   Dload  Upload   Total   Spent    Left  Speed
+	                  
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+	                  100  9898  100  9898    0     0  15711      0 --:--:-- --:--:-- --:--:-- 15711
+	                    % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+	                                                   Dload  Upload   Total   Spent    Left  Speed
+	                  
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+	                  
+	                    0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+	                   35 4072k   35 1446k    0     0   685k      0  0:00:05  0:00:02  0:00:03 1562k
+	                  100 4072k  100 4072k    0     0  1464k      0  0:00:02  0:00:02 --:--:-- 2548k
+	              stdout:
+	                  Detected platform: linux-arm
+	                  Latest Version: 2.0.10
+	                  Downloading https://github.com/zyedidia/micro/releases/download/v2.0.10/micro-2.0.10-linux-arm.tar.gz
+	                  micro-2.0.10/micro
+	                  
+	                  
+	                   __  __ _                  ___           _        _ _          _ _
+	                  |  \/  (_) ___ _ __ ___   |_ _|_ __  ___| |_ __  | | | ___  __| | |
+	                  | |\/| | |/ __| '__/ _ \   | || '_ \/ __| __/ _\ | | |/ _ \/ _  | |
+	                  | |  | | | (__| | | (_) |  | || | | \__ \ || (_| | | |  __/ (_| |_|
+	                  |_|  |_|_|\___|_|  \___/  |___|_| |_|___/\__\__,_|_|_|\___|\__,_(_)
+	                  
+	                  Micro has been downloaded to the current directory.
+	                  You can run it with:
+	                  
+	                  ./micro
+	----------
+	          ID: installmicro
+	    Function: cmd.run
+	        Name: sudo mv micro /usr/local/bin
+	      Result: True
+	     Comment: Command "sudo mv micro /usr/local/bin" run
+	     Started: 10:25:37.425525
+	    Duration: 64.835 ms
+	     Changes:   
+	              ----------
+	              pid:
+	                  2027
+	              retcode:
+	                  0
+	              stderr:
+	              stdout:
+	----------
+	          ID: /usr/local/bin/repos
+	    Function: file.managed
+	      Result: True
+	     Comment: File /usr/local/bin/repos updated
+	     Started: 10:25:37.491196
+	    Duration: 84.053 ms
+	     Changes:   
+	              ----------
+	              diff:
+	                  New file
+	              mode:
+	                  0644
+	----------
+	          ID: /usr/local/bin/ssh
+	    Function: file.managed
+	      Result: True
+	     Comment: File /usr/local/bin/ssh updated
+	     Started: 10:25:37.575658
+	    Duration: 37.097 ms
+	     Changes:   
+	              ----------
+	              diff:
+	                  New file
+	              mode:
+	                  0644
+	----------
+	          ID: /usr/local/bin/repos && /usr/local/bin/ssh
+	    Function: file.managed
+	      Result: False
+	     Comment: Parent directory not present
+	     Started: 10:25:37.613169
+	    Duration: 4.793 ms
+	     Changes:   
+	
+	Summary for raspberrypi
+	------------
+	Succeeded: 5 (changed=5)
+	Failed:    3
+	------------
+	Total states run:     8
+	Total run time:  21.902 s
+	ERROR: Minions returned with non-zero exit code
+
+Apparently file.managed cannot work with && statement so let's change init.sls because right now I can run neither repos or ssh commands on Raspberry Pi.
+
+Final version of init.sls file:
+
+![final](final.png)
+
+Let's test.
+
+	$ sudo salt "*" state.apply repos
+		raspberrypi:
+		----------
+		          ID: programs
+		    Function: pkg.installed
+		      Result: True
+		     Comment: All specified packages are already installed
+		     Started: 10:39:39.282141
+		    Duration: 240.247 ms
+		     Changes:   
+		----------
+		          ID: choco
+		    Function: chocolatey.installed
+		        Name: git
+		      Result: False
+		     Comment: State 'chocolatey.installed' was not found in SLS 'repos'
+		              Reason: 'chocolatey' __virtual__ returned False: chocolatey module could not be loaded
+		     Changes:   
+		----------
+		          ID: choco
+		    Function: chocolatey.installed
+		        Name: micro
+		      Result: False
+		     Comment: State 'chocolatey.installed' was not found in SLS 'repos'
+		              Reason: 'chocolatey' __virtual__ returned False: chocolatey module could not be loaded
+		     Changes:   
+		----------
+		          ID: installmicro
+		    Function: cmd.run
+		        Name: curl https://getmic.ro | bash
+		      Result: True
+		     Comment: /usr/local/bin/micro exists
+		     Started: 10:39:40.850549
+		    Duration: 24.302 ms
+		     Changes:   
+		----------
+		          ID: installmicro
+		    Function: cmd.run
+		        Name: sudo mv micro /usr/local/bin
+		      Result: True
+		     Comment: /usr/local/bin/micro exists
+		     Started: 10:39:40.875291
+		    Duration: 23.3 ms
+		     Changes:   
+		----------
+		          ID: /usr/local/bin/repos
+		    Function: file.managed
+		      Result: True
+		     Comment: File /usr/local/bin/repos is in the correct state
+		     Started: 10:39:40.899001
+		    Duration: 148.51 ms
+		     Changes:   
+		----------
+		          ID: /usr/local/bin/ssh
+		    Function: file.managed
+		      Result: True
+		     Comment: File /usr/local/bin/ssh is in the correct state
+		     Started: 10:39:41.047911
+		    Duration: 67.163 ms
+		     Changes:   
+		----------
+		          ID: reposfile
+		    Function: file.managed
+		        Name: /usr/local/bin/repos
+		      Result: True
+		     Comment: 
+		     Started: 10:39:41.115469
+		    Duration: 4.866 ms
+		     Changes:   
+		              ----------
+		              mode:
+		                  0755
+		----------
+		          ID: sshfile
+		    Function: file.managed
+		        Name: /usr/local/bin/ssh
+		      Result: True
+		     Comment: 
+		     Started: 10:39:41.120722
+		    Duration: 4.315 ms
+		     Changes:   
+		              ----------
+		              mode:
+		                  0755
+		
+		Summary for raspberrypi
+		------------
+		Succeeded: 7 (changed=2)
+		Failed:    2
+		------------
+		Total states run:     9
+		Total run time: 512.703 ms
+		windows:
+		----------
+		          ID: programs
+		    Function: pkg.installed
+		      Result: False
+		     Comment: The following packages failed to install/update: ssh, git
+		     Started: 10:39:35.544263
+		    Duration: 313.823 ms
+		     Changes:   
+		              ----------
+		              git:
+		                  Unable to locate package git
+		              ssh:
+		                  Unable to locate package ssh
+		----------
+		          ID: choco
+		    Function: chocolatey.installed
+		        Name: git
+		      Result: True
+		     Comment: git 2.36.0 is already installed
+		     Started: 10:39:35.858086
+		    Duration: 3406.969 ms
+		     Changes:   
+		----------
+		          ID: choco
+		    Function: chocolatey.installed
+		        Name: micro
+		      Result: True
+		     Comment: micro 2.0.10 is already installed
+		     Started: 10:39:39.265055
+		    Duration: 3499.404 ms
+		     Changes:   
+		----------
+		          ID: installmicro
+		    Function: cmd.run
+		        Name: curl https://getmic.ro | bash
+		      Result: False
+		     Comment: Command "curl https://getmic.ro | bash" run
+		     Started: 10:39:42.780157
+		    Duration: 3485.751 ms
+		     Changes:   
+		              ----------
+		              pid:
+		                  13356
+		              retcode:
+		                  1
+		              stderr:
+		                    % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+		                                                   Dload  Upload   Total   Spent    Left  Speed
+		                  
+		                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0Access is denied.
+		                  
+		                  
+		                  
+		                  100  9898  100  9898    0     0  31020      0 --:--:-- --:--:-- --:--:-- 31125
+		                  curl: (23) Failure writing output to destination
+		              stdout:
+		----------
+		          ID: installmicro
+		    Function: cmd.run
+		        Name: sudo mv micro /usr/local/bin
+		      Result: False
+		     Comment: Command "sudo mv micro /usr/local/bin" run
+		     Started: 10:39:46.265908
+		    Duration: 15.628 ms
+		     Changes:   
+		              ----------
+		              pid:
+		                  29308
+		              retcode:
+		                  1
+		              stderr:
+		                  'sudo' is not recognized as an internal or external command,
+		                  operable program or batch file.
+		              stdout:
+		----------
+		          ID: C:/repos
+		    Function: file.managed
+		      Result: True
+		     Comment: File C:/repos is in the correct state
+		     Started: 10:39:46.281536
+		    Duration: 47.105 ms
+		     Changes:   
+		----------
+		          ID: C:/ssh
+		    Function: file.managed
+		      Result: True
+		     Comment: File C:/ssh is in the correct state
+		     Started: 10:39:46.328641
+		    Duration: 16.022 ms
+		     Changes:   
+		----------
+		          ID: reposfile
+		    Function: file.managed
+		        Name: /usr/local/bin/repos
+		      Result: False
+		     Comment: The 'mode' option is not supported on Windows
+		     Started: 10:39:46.344663
+		    Duration: 0.0 ms
+		     Changes:   
+		----------
+		          ID: sshfile
+		    Function: file.managed
+		        Name: /usr/local/bin/ssh
+		      Result: False
+		     Comment: The 'mode' option is not supported on Windows
+		     Started: 10:39:46.344663
+		    Duration: 0.0 ms
+		     Changes:   
+		
+		Summary for windows
+		------------
+		Succeeded: 4 (changed=3)
+		Failed:    5
+		------------
+		Total states run:     9
+		Total run time:  10.785 s
+		ERROR: Minions returned with non-zero exit code
+			
+Now repos and ssh commands have right permissions on Linux and they work. Only litle annoying thing happened on Linux and I realized that Linux thinks command ssh means actuall ssh and not my ssh-keygen command that I created so I will have to change that name to something else. I changed my ssh command to sshkey so now it works like this:
+
+	$ sudo salt "*" state.apply repos
+	raspberrypi:
+	----------
+	          ID: programs
+	    Function: pkg.installed
+	      Result: True
+	     Comment: All specified packages are already installed
+	     Started: 10:53:22.215967
+	    Duration: 245.716 ms
+	     Changes:   
+	----------
+	          ID: choco
+	    Function: chocolatey.installed
+	        Name: git
+	      Result: False
+	     Comment: State 'chocolatey.installed' was not found in SLS 'repos'
+	              Reason: 'chocolatey' __virtual__ returned False: chocolatey module could not be loaded
+	     Changes:   
+	----------
+	          ID: choco
+	    Function: chocolatey.installed
+	        Name: micro
+	      Result: False
+	     Comment: State 'chocolatey.installed' was not found in SLS 'repos'
+	              Reason: 'chocolatey' __virtual__ returned False: chocolatey module could not be loaded
+	     Changes:   
+	----------
+	          ID: installmicro
+	    Function: cmd.run
+	        Name: curl https://getmic.ro | bash
+	      Result: True
+	     Comment: Command "curl https://getmic.ro | bash" run
+	     Started: 10:53:23.816740
+	    Duration: 8153.94 ms
+	     Changes:   
+	              ----------
+	              pid:
+	                  2198
+	              retcode:
+	                  0
+	              stderr:
+	                    % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+	                                                   Dload  Upload   Total   Spent    Left  Speed
+	                  
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+	                    0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+	                    0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+	                  100  9898  100  9898    0     0   3051      0  0:00:03  0:00:03 --:--:--  3051
+	                    % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+	                                                   Dload  Upload   Total   Spent    Left  Speed
+	                  
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+	                  
+	                    6 4072k    6  271k    0     0   178k      0  0:00:22  0:00:01  0:00:21  178k
+	                   47 4072k   47 1942k    0     0   770k      0  0:00:05  0:00:02  0:00:03 1667k
+	                  100 4072k  100 4072k    0     0  1220k      0  0:00:03  0:00:03 --:--:-- 2093k
+	              stdout:
+	                  Detected platform: linux-arm
+	                  Latest Version: 2.0.10
+	                  Downloading https://github.com/zyedidia/micro/releases/download/v2.0.10/micro-2.0.10-linux-arm.tar.gz
+	                  micro-2.0.10/micro
+	                  
+	                  
+	                   __  __ _                  ___           _        _ _          _ _
+	                  |  \/  (_) ___ _ __ ___   |_ _|_ __  ___| |_ __  | | | ___  __| | |
+	                  | |\/| | |/ __| '__/ _ \   | || '_ \/ __| __/ _\ | | |/ _ \/ _  | |
+	                  | |  | | | (__| | | (_) |  | || | | \__ \ || (_| | | |  __/ (_| |_|
+	                  |_|  |_|_|\___|_|  \___/  |___|_| |_|___/\__\__,_|_|_|\___|\__,_(_)
+	                  
+	                  Micro has been downloaded to the current directory.
+	                  You can run it with:
+	                  
+	                  ./micro
+	----------
+	          ID: installmicro
+	    Function: cmd.run
+	        Name: sudo mv micro /usr/local/bin
+	      Result: True
+	     Comment: Command "sudo mv micro /usr/local/bin" run
+	     Started: 10:53:31.972844
+	    Duration: 178.877 ms
+	     Changes:   
+	              ----------
+	              pid:
+	                  2235
+	              retcode:
+	                  0
+	              stderr:
+	              stdout:
+	----------
+	          ID: /usr/local/bin/repos
+	    Function: file.managed
+	      Result: True
+	     Comment: File /usr/local/bin/repos updated
+	     Started: 10:53:32.153936
+	    Duration: 245.138 ms
+	     Changes:   
+	              ----------
+	              diff:
+	                  New file
+	              mode:
+	                  0644
+	----------
+	          ID: /usr/local/bin/sshkey
+	    Function: file.managed
+	      Result: True
+	     Comment: File /usr/local/bin/sshkey updated
+	     Started: 10:53:32.400235
+	    Duration: 96.36 ms
+	     Changes:   
+	              ----------
+	              diff:
+	                  New file
+	              mode:
+	                  0644
+	----------
+	          ID: reposfile
+	    Function: file.managed
+	        Name: /usr/local/bin/repos
+	      Result: True
+	     Comment: 
+	     Started: 10:53:32.497612
+	    Duration: 13.859 ms
+	     Changes:   
+	              ----------
+	              mode:
+	                  0755
+	----------
+	          ID: sshfile
+	    Function: file.managed
+	        Name: /usr/local/bin/sshkey
+	      Result: True
+	     Comment: 
+	     Started: 10:53:32.512464
+	    Duration: 11.92 ms
+	     Changes:   
+	              ----------
+	              mode:
+	                  0755
+	
+	Summary for raspberrypi
+	------------
+	Succeeded: 7 (changed=6)
+	Failed:    2
+	------------
+	Total states run:     9
+	Total run time:   8.946 s
+	windows:
+	----------
+	          ID: programs
+	    Function: pkg.installed
+	      Result: False
+	     Comment: The following packages failed to install/update: ssh, git
+	     Started: 10:53:20.569061
+	    Duration: 298.297 ms
+	     Changes:   
+	              ----------
+	              git:
+	                  Unable to locate package git
+	              ssh:
+	                  Unable to locate package ssh
+	----------
+	          ID: choco
+	    Function: chocolatey.installed
+	        Name: git
+	      Result: True
+	     Comment: git 2.36.0 is already installed
+	     Started: 10:53:20.882994
+	    Duration: 7658.251 ms
+	     Changes:   
+	----------
+	          ID: choco
+	    Function: chocolatey.installed
+	        Name: micro
+	      Result: True
+	     Comment: micro 2.0.10 is already installed
+	     Started: 10:53:28.541245
+	    Duration: 4832.024 ms
+	     Changes:   
+	----------
+	          ID: installmicro
+	    Function: cmd.run
+	        Name: curl https://getmic.ro | bash
+	      Result: False
+	     Comment: Command "curl https://getmic.ro | bash" run
+	     Started: 10:53:33.373269
+	    Duration: 3561.755 ms
+	     Changes:   
+	              ----------
+	              pid:
+	                  16244
+	              retcode:
+	                  1
+	              stderr:
+	                    % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+	                                                   Dload  Upload   Total   Spent    Left  Speed
+	                  
+	                    0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0Access is denied.
+	                  
+	                  
+	                  
+	                  100  9898  100  9898    0     0  54458      0 --:--:-- --:--:-- --:--:-- 56560
+	                  curl: (23) Failure writing output to destination
+	              stdout:
+	----------
+	          ID: installmicro
+	    Function: cmd.run
+	        Name: sudo mv micro /usr/local/bin
+	      Result: False
+	     Comment: Command "sudo mv micro /usr/local/bin" run
+	     Started: 10:53:36.935024
+	    Duration: 31.266 ms
+	     Changes:   
+	              ----------
+	              pid:
+	                  29200
+	              retcode:
+	                  1
+	              stderr:
+	                  'sudo' is not recognized as an internal or external command,
+	                  operable program or batch file.
+	              stdout:
+	----------
+	          ID: C:/repos
+	    Function: file.managed
+	      Result: True
+	     Comment: File C:/repos updated
+	     Started: 10:53:36.966290
+	    Duration: 254.358 ms
+	     Changes:   
+	              ----------
+	              diff:
+	                  New file
+	----------
+	          ID: C:/sshkey
+	    Function: file.managed
+	      Result: True
+	     Comment: File C:/sshkey updated
+	     Started: 10:53:37.220648
+	    Duration: 28.15 ms
+	     Changes:   
+	              ----------
+	              diff:
+	                  New file
+	----------
+	          ID: reposfile
+	    Function: file.managed
+	        Name: /usr/local/bin/repos
+	      Result: False
+	     Comment: The 'mode' option is not supported on Windows
+	     Started: 10:53:37.248798
+	    Duration: 0.0 ms
+	     Changes:   
+	----------
+	          ID: sshfile
+	    Function: file.managed
+	        Name: /usr/local/bin/sshkey
+	      Result: False
+	     Comment: The 'mode' option is not supported on Windows
+	     Started: 10:53:37.248798
+	    Duration: 0.0 ms
+	     Changes:   
+	
+	Summary for windows
+	------------
+	Succeeded: 4 (changed=5)
+	Failed:    5
+	------------
+	Total states run:     9
+	Total run time:  16.664 s
+	ERROR: Minions returned with non-zero exit code
+	
+Now this state works like it should and is finally complete.
+
