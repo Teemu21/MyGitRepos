@@ -1127,7 +1127,7 @@ Let's test.
 		Total run time:  10.785 s
 		ERROR: Minions returned with non-zero exit code
 			
-Now repos and ssh commands have right permissions on Linux and they work. Only litle annoying thing happened on Linux and I realized that Linux thinks command ssh means actuall ssh and not my ssh-keygen command that I created so I will have to change that name to something else. I changed my ssh command to sshkey so now it works like this:
+Now repos and ssh commands have right permissions on Linux and they work. Only litle annoying thing happened on Linux and I realized that Linux thinks command ssh means actual ssh and not my ssh-keygen command that I created so I will have to change that name to something else. I changed my ssh command to sshkey so now it works like this:
 
 	$ sudo salt "*" state.apply repos
 	raspberrypi:
@@ -1405,4 +1405,18 @@ Now repos and ssh commands have right permissions on Linux and they work. Only l
 	ERROR: Minions returned with non-zero exit code
 	
 Now this state works like it should and is finally complete.
+
+## Sources:
+
+Tero Karvinen: [Configure Windows and Linux with Single Salt Module](https://terokarvinen.com/2018/configure-windows-and-linux-with-salt-jinja-if-else-and-grains/?fromSearch=windows%20linux%20salt)
+
+Tero Karvinen: [Control Windows with Salt](https://terokarvinen.com/2018/control-windows-with-salt/)
+
+Salt Chocolatey: [SALT.STATES.CHOCOLATEY](https://docs.saltproject.io/en/latest/ref/states/all/salt.states.chocolatey.html)
+
+Install Micro on Linux: [Micro on Linux](https://www.geeksforgeeks.org/micro-lightweight-terminal-based-text-editor/)
+
+FOSS: [Guide](https://itsfoss.com/install-bash-on-windows/)
+
+Salt cmd.run: [cmd](https://docs.saltproject.io/en/latest/ref/states/all/salt.states.cmd.html)
 
