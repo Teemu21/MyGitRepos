@@ -30,8 +30,8 @@ Follow the project flow in this [document](https://github.com/Teemu21/MyGitRepos
 Additional instructions:
 
 * If you have Windows machine and you have followed FOSS's instructions to install Linux on Windows know that when you run bash sshkey on Windows it will create SSH keys on your WSL machine but not on your actual Windows machine. After running sshkey on Windows you will have to manually run command "ssh-keygen" on your actual Windows machine so that you can use pull/push in Git.
-* If your Salt Master isn't in actual publick IP address then you have to do like instruction above says about Windows. If your Salt Master has public IP address then you can use this Salt state on the WSL as well. WSL has it's own virtual network that can't be changed so you can't use it with Salt in the homenetwork.
-* On Linux you should be aware that if you run sshkey before repos Git might get confused and give your character length error with first four characters being gene instead of cloning. If this happens delete sshkey command from /usr/local/bin or move it somewhere else.
+* If your Salt Master isn't in actual public IP address then you have to do like instruction above says about Windows. If your Salt Master has public IP address then you can use this Salt state on the WSL as well. WSL has it's own virtual network that can't be changed so you can't use it with Salt in the homenetwork.
+* On Linux you should be aware that if you run sshkey before repos Git might get confused and give you character length error with first four characters being gene instead of cloning. If this happens delete sshkey command from /usr/local/bin or move it somewhere else.
   	
 # Finish Salt State's Results:
 
